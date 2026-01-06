@@ -4,6 +4,12 @@ frontend/dist
 frontend/.vite
 frontend/.env
 
+# Python / backend
+backend/__pycache__
+backend/.venv
+backend/venv
+backend/.env
+
 # Git & tooling
 .git
 .gitignore
