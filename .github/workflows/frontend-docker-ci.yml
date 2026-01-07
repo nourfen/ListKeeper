@@ -4,12 +4,10 @@ on:
   push:
     paths:
       - "frontend/**"
-      - "docker/frontend.Dockerfile"
       - ".github/workflows/frontend-docker-ci.yml"
   pull_request:
     paths:
       - "frontend/**"
-      - "docker/frontend.Dockerfile"
       - ".github/workflows/frontend-docker-ci.yml"
 
 jobs:
@@ -21,16 +19,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: docker build -f docker/frontend.Dockerfile -t listkeeper-frontend:ci .
+        run: docker build -f frontend/Dockerfile.dev -t lk-frontend:ci .
 
       - name: Run container
         run: |
-          docker run -d --name frontend-ci -p 8080:80 listkeeper-frontend:ci
+          docker run -d --name frontend-ci -p 8080:80 lk-frontend:ci
           docker ps
       
-      - name: Smoke test homepage responds
+      - name: Homepage responds in 20 seconds test
         run: |
-          # Try up to ~20 seconds for nginx to come up
           for i in {1..20}; do
             if curl -fsS http://localhost:8080 >/dev/null; then
               echo "Frontend is serving ✅"
