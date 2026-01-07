@@ -1,0 +1,54 @@
+name: Services Host CI
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/stack-host-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/stack-host-ci.yml"
+
+jobs:
+  build-run-smoketest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build & start stack
+        run: docker compose up -d --build
+
+      - name: Show containers
+        run: docker compose ps
+
+      - name: Wait for services to be healthy
+        run: |
+          for i in {1..30}; do
+            BACKEND=$(docker inspect -f '{{.State.Health.Status}}' $(docker compose ps -q backend) 2>/dev/null || echo starting)
+            FRONTEND=$(docker inspect -f '{{.State.Health.Status}}' $(docker compose ps -q frontend) 2>/dev/null || echo starting)
+
+            echo "backend=$BACKEND frontend=$FRONTEND"
+
+            if [ "$BACKEND" = "healthy" ] && [ "$FRONTEND" = "healthy" ]; then
+              echo "All services healthy ✅"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "Services did not become healthy ❌"
+          echo "---- docker compose ps ----"
+          docker compose ps || true
+          echo "---- docker compose logs ----"
+          docker compose logs --no-color || true
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v --remove-orphans

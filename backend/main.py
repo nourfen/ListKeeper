@@ -13,7 +13,7 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-# test endpoint
-@app.get("/ping")
-def ping():
-    return {"message": "backend reachable"}
+# Healthcheck endpoint
+@app.get("/health")
+def health():
+    return {"status": "ok"}
