@@ -1,14 +1,16 @@
-name: Frontend Docker CI
+name: Services Host CI
 
 on:
   push:
     paths:
       - "frontend/**"
-      - ".github/workflows/frontend-docker-ci.yml"
+      - "backend/**"
+      - ".github/workflows/stack-host-ci.yml"
   pull_request:
     paths:
       - "frontend/**"
-      - ".github/workflows/frontend-docker-ci.yml"
+      - "backend/**"
+      - ".github/workflows/stack-host-ci.yml"
 
 jobs:
   build-run-smoketest:
@@ -18,14 +20,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -f frontend/Dockerfile.dev -t lk-frontend:ci .
+      - name: Build & start stack
+        run: docker compose up -d --build
 
-      - name: Run container
-        run: |
-          docker run -d --name frontend-ci -p 8080:80 lk-frontend:ci
-          docker ps
-      
+      - name: Show containers
+        run: docker compose ps
+
       - name: Homepage responds in 20 seconds test
         run: |
           for i in {1..20}; do
@@ -37,10 +37,10 @@ jobs:
           done
 
           echo "Frontend did not become ready ❌"
-          echo "---- docker logs ----"
-          docker logs frontend-ci || true
+          echo "---- docker compose logs ----"
+          docker compose logs --no-color || true
           exit 1
 
       - name: Cleanup
         if: always()
-        run: docker rm -f frontend-ci || true
+        run: docker compose down -v --remove-orphans
